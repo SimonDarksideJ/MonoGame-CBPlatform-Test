@@ -17,6 +17,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       
+      - name: Install iOS workload
+        run: dotnet workload install ios
+      
       - name: Restore dependencies
         working-directory: ./CBPlatformTest
         run: dotnet restore
@@ -48,6 +51,9 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '9.0.x'
+      
+      - name: Install Android workload
+        run: dotnet workload install android
       
       - name: Restore dependencies
         working-directory: ./CBPlatformTest
