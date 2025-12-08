@@ -22,7 +22,7 @@ jobs:
       
       - name: Restore dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore
+        run: dotnet restore CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
       
       - name: Build iOS
         working-directory: ./CBPlatformTest
@@ -57,7 +57,7 @@ jobs:
       
       - name: Restore dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore
+        run: dotnet restore CBPlatformTest.${{ matrix.platform }}/CBPlatformTest.${{ matrix.platform }}.csproj
       
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
