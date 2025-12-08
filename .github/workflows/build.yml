@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-26
     strategy:
       matrix:
         platform: [iOS]
@@ -20,7 +20,11 @@ jobs:
       - name: Install iOS workload
         run: dotnet workload install ios
       
-      - name: Restore dependencies
+      - name: Restore content dependencies
+        working-directory: ./CBPlatformTest
+        run: dotnet restore Content/Content.csproj
+
+      - name: Restore iOS dependencies
         working-directory: ./CBPlatformTest
         run: dotnet restore CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
       
@@ -55,7 +59,11 @@ jobs:
       - name: Install Android workload
         run: dotnet workload install android
       
-      - name: Restore dependencies
+      - name: Restore content dependencies
+        working-directory: ./CBPlatformTest
+        run: dotnet restore Content/Content.csproj
+
+      - name: Restore ${{ matrix.platform }} dependencies
         working-directory: ./CBPlatformTest
         run: dotnet restore CBPlatformTest.${{ matrix.platform }}/CBPlatformTest.${{ matrix.platform }}.csproj
       
