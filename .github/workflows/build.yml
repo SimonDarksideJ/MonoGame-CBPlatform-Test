@@ -59,19 +59,7 @@ jobs:
           content-project-path: "./CBPlatformTest/Content"
           assets-source-path: "./CBPlatformTest/Content/Assets"
           monogame-platform: ${{ matrix.platform }}
-          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release"
-
-      - name: Copy content to RID folder
-        if: ${{ matrix.rid_path != '' }}
-        shell: pwsh
-        run: |
-          $sourceContent = "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
-          $destContent = "CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.rid_path }}/Content"
-          if (Test-Path $sourceContent) {
-            New-Item -ItemType Directory -Path (Split-Path -Parent $destContent) -Force | Out-Null
-            Copy-Item -Path $sourceContent -Destination $destContent -Recurse -Force
-            Write-Output "Copied content to $destContent"
-          }
+          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.rid_path }}"
 
       - name: Restore ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
