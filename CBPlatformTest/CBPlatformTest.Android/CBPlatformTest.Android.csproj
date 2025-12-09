@@ -7,6 +7,7 @@
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <AssemblyName>CBPlatformTest</AssemblyName>
+    <WorkflowMode>false</WorkflowMode>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CBPlatformTest.Core\CBPlatformTest.Core.csproj" />
@@ -19,7 +20,7 @@
       <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
   </ItemGroup>
-  <Target Name="BuildContent" BeforeTargets="Build">
+  <Target Name="BuildContent" BeforeTargets="Build" Condition="'$(WorkflowMode)' != 'true'">
     <PropertyGroup>
       <ContentOutput>$(ProjectDir)$(OutputPath)</ContentOutput>
       <ContentTemp>$(ProjectDir)$(IntermediateOutputPath)</ContentTemp>

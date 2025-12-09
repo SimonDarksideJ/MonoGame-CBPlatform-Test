@@ -1,11 +1,10 @@
 name: Build Multi-Platform
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 
 jobs:
-  build-ios:
-    runs-on: macos-26
+  build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
@@ -14,117 +13,68 @@ jobs:
             output_dir: CBPlatformTest.iOS
             runtime: ios-arm64
             workload: ios
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '9.0.x'
-      
-      - name: Install workload
-        run: dotnet workload install ${{ matrix.workload }}
-
-      - name: Restore content dependencies
-        working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj -r ${{ matrix.runtime }}
-      
-      - name: Restore ${{ matrix.platform }} dependencies
-        working-directory: ./CBPlatformTest
-        run: dotnet restore ${{ matrix.project }} -r ${{ matrix.runtime }}
-      
-      - name: Build ${{ matrix.platform }}
-        working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }}
-
-      - name: Publish ${{ matrix.platform }} release
-        working-directory: ./CBPlatformTest
-        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained --no-build
-      
-      - name: Archive ${{ matrix.platform }} build
-        run: |
-          mkdir -p build-artifacts
-          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release
-          zip -r ../../../../build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip .
-
-      - name: Archive ${{ matrix.platform }} publish
-        run: |
-          mkdir -p publish-artifacts
-          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release/net9.0-ios/${{ matrix.runtime }}/publish
-          zip -r ../../../../../../publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip .
-      
-      - name: Upload ${{ matrix.platform }} artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ matrix.platform }}-build
-          path: build-artifacts/
-
-      - name: Upload ${{ matrix.platform }} publish artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ matrix.platform }}-publish
-          path: publish-artifacts/
-
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
+            os: macos-26
+            tfm: net9.0-ios
           - platform: DesktopGL
             project: CBPlatformTest.DesktopGL/CBPlatformTest.DesktopGL.csproj
             output_dir: CBPlatformTest.DesktopGL
             runtime: win-x64
-            workload: ''
+            workload: ""
+            os: windows-latest
+            tfm: net9.0
           - platform: Android
             project: CBPlatformTest.Android/CBPlatformTest.Android.csproj
             output_dir: CBPlatformTest.Android
             runtime: android-arm64
             workload: android
+            os: windows-latest
+            tfm: net9.0-android
     steps:
       - uses: actions/checkout@v5
-      
+
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '9.0.x'
-      
+          dotnet-version: "9.0.x"
+
       - name: Install workload
         if: ${{ matrix.workload != '' }}
         run: dotnet workload install ${{ matrix.workload }}
 
-      - name: Restore content dependencies
-        working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj -r ${{ matrix.runtime }}
-      
-      - name: Restore ${{ matrix.platform }} dependencies
-        working-directory: ./CBPlatformTest
-        run: dotnet restore ${{ matrix.project }} -r ${{ matrix.runtime }}
-      
+      - name: Process content
+        uses: ./.github/actions/build-content
+        with:
+          content-project-path: "./CBPlatformTest/Content"
+          assets-source-path: "./CBPlatformTest/Content/Assets"
+          monogame-platform: ${{ matrix.platform }}
+          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
+          runtime-identifier: ${{ matrix.runtime }}
+
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }}
+        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
 
-      - name: Publish ${{ matrix.platform }} release
-        working-directory: ./CBPlatformTest
-        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained --no-build
-      
       - name: Archive ${{ matrix.platform }} build
-        run: |
-          New-Item -ItemType Directory -Path build-artifacts -Force
-          Compress-Archive -Path CBPlatformTest/${{ matrix.output_dir }}/bin/Release/* -DestinationPath build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip -Force
-
-      - name: Archive ${{ matrix.platform }} publish
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path publish-artifacts -Force
-          $tfm = if ('${{ matrix.platform }}' -eq 'Android') { 'net9.0-android' } else { 'net9.0' }
-          Compress-Archive -Path "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/$tfm/${{ matrix.runtime }}/publish/*" -DestinationPath publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip -Force
-      
+          New-Item -ItemType Directory -Path build-artifacts -Force | Out-Null
+          Compress-Archive -Path "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/*" -DestinationPath "build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip" -Force
+
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.platform }}-build
           path: build-artifacts/
+
+      - name: Publish ${{ matrix.platform }} release
+        working-directory: ./CBPlatformTest
+        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained --no-build
+
+      - name: Archive ${{ matrix.platform }} publish
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path publish-artifacts -Force | Out-Null
+          Compress-Archive -Path "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/${{ matrix.tfm }}/${{ matrix.runtime }}/publish/*" -DestinationPath "publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip" -Force
 
       - name: Upload ${{ matrix.platform }} publish artifact
         uses: actions/upload-artifact@v5

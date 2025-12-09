@@ -4,6 +4,7 @@
     <TargetFramework>net9.0-ios</TargetFramework>
     <SupportedOSPlatformVersion>12.2</SupportedOSPlatformVersion>
     <CodesignKey>iPhone Developer</CodesignKey>
+    <WorkflowMode>false</WorkflowMode>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CBPlatformTest.Core\CBPlatformTest.Core.csproj" />
@@ -16,7 +17,7 @@
       <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </BundleResource>
   </ItemGroup>
-  <Target Name="BuildContent" BeforeTargets="Build">
+  <Target Name="BuildContent" BeforeTargets="Build" Condition="'$(WorkflowMode)' != 'true'">
     <PropertyGroup>
       <ContentOutput>$(ProjectDir)$(OutputPath)</ContentOutput>
       <ContentTemp>$(ProjectDir)$(IntermediateOutputPath)</ContentTemp>
