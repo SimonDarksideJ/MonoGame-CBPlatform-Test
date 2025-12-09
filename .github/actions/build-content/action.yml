@@ -65,8 +65,10 @@ runs:
       shell: pwsh
       run: |
         $OutputFolder = Join-Path (Get-Location) "${{ inputs.output-folder }}"
-        $TempFolder = Join-Path $OutputFolder "..\..\build-temp"
-        $LogsFolder = Join-Path $OutputFolder "..\..\build-logs"
+        # Use workspace root for temp and logs folders
+        $WorkspaceRoot = Get-Location
+        $TempFolder = Join-Path $WorkspaceRoot "build-temp"
+        $LogsFolder = Join-Path $WorkspaceRoot "build-logs"
         
         # Create directories
         New-Item -ItemType Directory -Path $OutputFolder -Force | Out-Null
@@ -137,8 +139,11 @@ runs:
         Write-Output "Using runtime identifier: ${{ inputs.runtime-identifier }}"
         Push-Location $env:CONTENT_PROJECT_PATH
         try {
-          dotnet restore -r ${{ inputs.runtime-identifier }} 2>&1 | Tee-Object -FilePath "$env:LOGS_FOLDER\restore.log"
+          # Use --force-evaluate to avoid NuGet cache issues
+          dotnet restore -r ${{ inputs.runtime-identifier }} --force-evaluate --disable-parallel 2>&1 | Tee-Object -FilePath "$env:LOGS_FOLDER\restore.log"
           if ($LASTEXITCODE -ne 0) {
+            Write-Output "Restore log:"
+            Get-Content "$env:LOGS_FOLDER\restore.log" | Write-Output
             throw "Restore failed with exit code: $LASTEXITCODE"
           }
         } finally {
