@@ -8,13 +8,13 @@ jobs:
     strategy:
       matrix:
         include:
-          # - platform: iOS
-          #   project: CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
-          #   output_dir: CBPlatformTest.iOS
-          #   runtime: ios-arm64
-          #   workload: ios
-          #   os: macos-26
-          #   tfm: net9.0-ios
+          - platform: iOS
+            project: CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
+            output_dir: CBPlatformTest.iOS
+            runtime: ios-arm64
+            workload: ios
+            os: macos-26
+            tfm: net9.0-ios
           - platform: DesktopGL
             project: CBPlatformTest.DesktopGL/CBPlatformTest.DesktopGL.csproj
             output_dir: CBPlatformTest.DesktopGL
@@ -22,14 +22,17 @@ jobs:
             workload: ""
             os: windows-latest
             tfm: net9.0
-          # - platform: Android
-          #   project: CBPlatformTest.Android/CBPlatformTest.Android.csproj
-          #   output_dir: CBPlatformTest.Android
-          #   runtime: android-arm64
-          #   workload: android
-          #   os: windows-latest
-          #   tfm: net9.0-android
+          - platform: Android
+            project: CBPlatformTest.Android/CBPlatformTest.Android.csproj
+            output_dir: CBPlatformTest.Android
+            runtime: android-arm64
+            workload: android
+            os: windows-latest
+            tfm: net9.0-android
     steps:
+      - name: Suppress RID warning
+        run: echo "DOTNET_SUPPRESS_RUNTIME_IDENTIFIER_WARNING=1" >> $GITHUB_ENV      
+
       - uses: actions/checkout@v5
 
       - name: Setup .NET 9
