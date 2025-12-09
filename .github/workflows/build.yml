@@ -61,6 +61,18 @@ jobs:
           monogame-platform: ${{ matrix.platform }}
           output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release"
 
+      - name: Copy content to RID folder
+        if: ${{ matrix.rid_path != '' }}
+        shell: pwsh
+        run: |
+          $sourceContent = "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
+          $destContent = "CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.rid_path }}/Content"
+          if (Test-Path $sourceContent) {
+            New-Item -ItemType Directory -Path (Split-Path -Parent $destContent) -Force | Out-Null
+            Copy-Item -Path $sourceContent -Destination $destContent -Recurse -Force
+            Write-Output "Copied content to $destContent"
+          }
+
       - name: Restore ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
         run: dotnet restore ${{ matrix.project }} -r ${{ matrix.runtime }}
@@ -74,18 +86,6 @@ jobs:
         if: ${{ matrix.platform != 'iOS' }}
         working-directory: ./CBPlatformTest
         run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
-
-      - name: Copy content to RID folder
-        if: ${{ matrix.rid_path != '' }}
-        shell: pwsh
-        run: |
-          $sourceContent = "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
-          $destContent = "CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.rid_path }}/Content"
-          if (Test-Path $sourceContent) {
-            New-Item -ItemType Directory -Path (Split-Path -Parent $destContent) -Force | Out-Null
-            Copy-Item -Path $sourceContent -Destination $destContent -Recurse -Force
-            Write-Output "Copied content to $destContent"
-          }
 
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v5

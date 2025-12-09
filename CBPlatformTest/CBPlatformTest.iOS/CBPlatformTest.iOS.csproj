@@ -12,19 +12,16 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.iOS" Version="3.8.5-develop.*" />
   </ItemGroup>
-  <Target Name="CollectContentBundles" BeforeTargets="Build" AfterTargets="BuildContent">
-    <PropertyGroup>
-      <!-- For iOS in CI/CD, content is in bin/Configuration/TargetFramework/Content -->
-      <ContentPath Condition="'$(WorkflowMode)' == 'true'">$(ProjectDir)bin\$(Configuration)\$(TargetFramework)\Content</ContentPath>
-      <!-- For local builds, content is in the standard OutputPath -->
-      <ContentPath Condition="'$(WorkflowMode)' != 'true'">$(ProjectDir)$(OutputPath)Content</ContentPath>
-    </PropertyGroup>
-    <ItemGroup>
-      <BundleResource Include="$(ContentPath)\**\*" Condition="Exists('$(ContentPath)')">
-        <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      </BundleResource>
-    </ItemGroup>
-  </Target>
+  <ItemGroup>
+    <!-- For CI/CD workflow mode -->
+    <BundleResource Include="$(ProjectDir)bin\$(Configuration)\$(TargetFramework)\Content\**\*" Condition="'$(WorkflowMode)' == 'true' AND Exists('$(ProjectDir)bin\$(Configuration)\$(TargetFramework)\Content')">
+      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </BundleResource>
+    <!-- For local builds -->
+    <BundleResource Include="$(ProjectDir)$(OutputPath)Content\**\*" Condition="'$(WorkflowMode)' != 'true' AND Exists('$(ProjectDir)$(OutputPath)Content')">
+      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </BundleResource>
+  </ItemGroup>
   <Target Name="BuildContent" BeforeTargets="Build" Condition="'$(WorkflowMode)' != 'true'">
     <PropertyGroup>
       <ContentOutput>$(ProjectDir)$(OutputPath)</ContentOutput>
