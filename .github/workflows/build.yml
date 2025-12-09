@@ -27,7 +27,7 @@ jobs:
 
       - name: Restore content dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj        
+        run: dotnet restore Content/Content.csproj -r ${{ matrix.runtime }}
       
       - name: Restore ${{ matrix.platform }} dependencies
         working-directory: ./CBPlatformTest
@@ -94,7 +94,7 @@ jobs:
 
       - name: Restore content dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj        
+        run: dotnet restore Content/Content.csproj -r ${{ matrix.runtime }}
       
       - name: Restore ${{ matrix.platform }} dependencies
         working-directory: ./CBPlatformTest
