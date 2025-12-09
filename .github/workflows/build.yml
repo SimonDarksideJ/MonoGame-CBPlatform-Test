@@ -50,6 +50,10 @@ jobs:
           output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
           runtime-identifier: ${{ matrix.runtime }}
 
+      - name: Restore ${{ matrix.platform }}
+        working-directory: ./CBPlatformTest
+        run: dotnet restore ${{ matrix.project }} -r ${{ matrix.runtime }}
+
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
         run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
