@@ -81,7 +81,7 @@ jobs:
 
       - name: Publish ${{ matrix.platform }} release
         working-directory: ./CBPlatformTest
-        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained --no-build
+        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false -p:WorkflowMode=true --self-contained --no-build
 
       - name: Archive ${{ matrix.platform }} publish
         shell: pwsh
