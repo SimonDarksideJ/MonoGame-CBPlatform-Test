@@ -50,8 +50,8 @@ jobs:
       - name: Archive ${{ matrix.platform }} publish
         run: |
           mkdir -p publish-artifacts
-          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release/${{ matrix.runtime }}/publish
-          zip -r ../../../../../publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip .
+          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release/net9.0-ios/${{ matrix.runtime }}/publish
+          zip -r ../../../../../../publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip .
       
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v5
@@ -114,9 +114,11 @@ jobs:
           Compress-Archive -Path CBPlatformTest/${{ matrix.output_dir }}/bin/Release/* -DestinationPath build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip -Force
 
       - name: Archive ${{ matrix.platform }} publish
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Path publish-artifacts -Force
-          Compress-Archive -Path CBPlatformTest/${{ matrix.output_dir }}/bin/Release/${{ matrix.runtime }}/publish/* -DestinationPath publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip -Force
+          $tfm = if ('${{ matrix.platform }}' -eq 'Android') { 'net9.0-android' } else { 'net9.0' }
+          Compress-Archive -Path "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/$tfm/${{ matrix.runtime }}/publish/*" -DestinationPath publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip -Force
       
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v5
