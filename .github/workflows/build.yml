@@ -35,7 +35,7 @@ jobs:
       
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }}
+        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }}
 
       - name: Publish ${{ matrix.platform }} release
         working-directory: ./CBPlatformTest
@@ -102,7 +102,7 @@ jobs:
       
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }}
+        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }}
 
       - name: Publish ${{ matrix.platform }} release
         working-directory: ./CBPlatformTest
