@@ -57,9 +57,15 @@ jobs:
         working-directory: ./CBPlatformTest
         run: dotnet restore ${{ matrix.project }} -r ${{ matrix.runtime }}
 
-      - name: Build ${{ matrix.platform }}
+      - name: Build ${{ matrix.platform }} (iOS)
+        if: ${{ matrix.platform == 'iOS' }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }}${{ matrix.platform == 'iOS' && '' || format(' -r {0}', matrix.runtime) }} -p:WorkflowMode=true
+        run: dotnet build -c Release ${{ matrix.project }} -p:WorkflowMode=true
+
+      - name: Build ${{ matrix.platform }} (Other)
+        if: ${{ matrix.platform != 'iOS' }}
+        working-directory: ./CBPlatformTest
+        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
 
       - name: Archive ${{ matrix.platform }} build
         shell: pwsh
