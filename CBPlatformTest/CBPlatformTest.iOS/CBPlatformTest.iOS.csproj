@@ -13,8 +13,14 @@
     <PackageReference Include="MonoGame.Framework.iOS" Version="3.8.5-develop.*" />
   </ItemGroup>
   <Target Name="CollectContentBundles" BeforeTargets="Build" AfterTargets="BuildContent">
+    <PropertyGroup>
+      <!-- For iOS in CI/CD, content is in bin/Configuration/TargetFramework/Content -->
+      <ContentPath Condition="'$(WorkflowMode)' == 'true'">$(ProjectDir)bin\$(Configuration)\$(TargetFramework)\Content</ContentPath>
+      <!-- For local builds, content is in the standard OutputPath -->
+      <ContentPath Condition="'$(WorkflowMode)' != 'true'">$(ProjectDir)$(OutputPath)Content</ContentPath>
+    </PropertyGroup>
     <ItemGroup>
-      <BundleResource Include="$(ProjectDir)$(OutputPath)Content\**\*" Condition="Exists('$(ProjectDir)$(OutputPath)Content')">
+      <BundleResource Include="$(ContentPath)\**\*" Condition="Exists('$(ContentPath)')">
         <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
       </BundleResource>
     </ItemGroup>
