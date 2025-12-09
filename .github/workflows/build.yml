@@ -8,7 +8,12 @@ jobs:
     runs-on: macos-26
     strategy:
       matrix:
-        platform: [iOS]
+        include:
+          - platform: iOS
+            project: CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
+            output_dir: CBPlatformTest.iOS
+            runtime: ios-arm64
+            workload: ios
     steps:
       - uses: actions/checkout@v5
       
@@ -17,37 +22,64 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       
-      - name: Install iOS workload
-        run: dotnet workload install ios
-      
+      - name: Install workload
+        run: dotnet workload install ${{ matrix.workload }}
+
       - name: Restore content dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj
+        run: dotnet restore Content/Content.csproj        
+      
+      - name: Restore ${{ matrix.platform }} dependencies
+        working-directory: ./CBPlatformTest
+        run: dotnet restore ${{ matrix.project }}
+      
+      - name: Build ${{ matrix.platform }}
+        working-directory: ./CBPlatformTest
+        run: dotnet build -c Release ${{ matrix.project }}
 
-      - name: Restore iOS dependencies
+      - name: Publish ${{ matrix.platform }} release
         working-directory: ./CBPlatformTest
-        run: dotnet restore CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
+        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained
       
-      - name: Build iOS
-        working-directory: ./CBPlatformTest
-        run: dotnet build -c Release CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
-      
-      - name: Archive iOS build
+      - name: Archive ${{ matrix.platform }} build
         run: |
           mkdir -p build-artifacts
-          7z a -r build-artifacts/CBPlatformTest-iOS.zip CBPlatformTest/CBPlatformTest.iOS/bin/Release/
+          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release
+          zip -r ../../../../build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip .
+
+      - name: Archive ${{ matrix.platform }} publish
+        run: |
+          mkdir -p publish-artifacts
+          cd CBPlatformTest/${{ matrix.output_dir }}/bin/Release/${{ matrix.runtime }}/publish
+          zip -r ../../../../../publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip .
       
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload ${{ matrix.platform }} artifact
+        uses: actions/upload-artifact@v5
         with:
-          name: iOS-build-${{ matrix.platform }}
+          name: ${{ matrix.platform }}-build
           path: build-artifacts/
+
+      - name: Upload ${{ matrix.platform }} publish artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.platform }}-publish
+          path: publish-artifacts/
 
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        platform: [DesktopGL, Android]
+        include:
+          - platform: DesktopGL
+            project: CBPlatformTest.DesktopGL/CBPlatformTest.DesktopGL.csproj
+            output_dir: CBPlatformTest.DesktopGL
+            runtime: win-x64
+            workload: ''
+          - platform: Android
+            project: CBPlatformTest.Android/CBPlatformTest.Android.csproj
+            output_dir: CBPlatformTest.Android
+            runtime: android-arm64
+            workload: android
     steps:
       - uses: actions/checkout@v5
       
@@ -56,28 +88,44 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       
-      - name: Install Android workload
-        run: dotnet workload install android
-      
+      - name: Install workload
+        if: ${{ matrix.workload != '' }}
+        run: dotnet workload install ${{ matrix.workload }}
+
       - name: Restore content dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore Content/Content.csproj
-
+        run: dotnet restore Content/Content.csproj        
+      
       - name: Restore ${{ matrix.platform }} dependencies
         working-directory: ./CBPlatformTest
-        run: dotnet restore CBPlatformTest.${{ matrix.platform }}/CBPlatformTest.${{ matrix.platform }}.csproj
+        run: dotnet restore ${{ matrix.project }}
       
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release CBPlatformTest.${{ matrix.platform }}/CBPlatformTest.${{ matrix.platform }}.csproj
+        run: dotnet build -c Release ${{ matrix.project }}
+
+      - name: Publish ${{ matrix.platform }} release
+        working-directory: ./CBPlatformTest
+        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained
       
       - name: Archive ${{ matrix.platform }} build
         run: |
           New-Item -ItemType Directory -Path build-artifacts -Force
-          7z a -r build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip CBPlatformTest/CBPlatformTest.${{ matrix.platform }}/bin/Release/
+          Compress-Archive -Path CBPlatformTest/${{ matrix.output_dir }}/bin/Release/* -DestinationPath build-artifacts/CBPlatformTest-${{ matrix.platform }}.zip -Force
+
+      - name: Archive ${{ matrix.platform }} publish
+        run: |
+          New-Item -ItemType Directory -Path publish-artifacts -Force
+          Compress-Archive -Path CBPlatformTest/${{ matrix.output_dir }}/bin/Release/${{ matrix.runtime }}/publish/* -DestinationPath publish-artifacts/CBPlatformTest-${{ matrix.platform }}-publish.zip -Force
       
       - name: Upload ${{ matrix.platform }} artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.platform }}-build
           path: build-artifacts/
+
+      - name: Upload ${{ matrix.platform }} publish artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.platform }}-publish
+          path: publish-artifacts/
