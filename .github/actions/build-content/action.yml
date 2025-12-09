@@ -136,11 +136,11 @@ runs:
       shell: pwsh
       run: |
         Write-Output "Restoring content project from: $env:CONTENT_PROJECT_PATH"
-        Write-Output "Using runtime identifier: ${{ inputs.runtime-identifier }}"
         Push-Location $env:CONTENT_PROJECT_PATH
         try {
-          # Use --force-evaluate to avoid NuGet cache issues
-          dotnet restore -r ${{ inputs.runtime-identifier }} --force-evaluate --disable-parallel 2>&1 | Tee-Object -FilePath "$env:LOGS_FOLDER\restore.log"
+          # Content builder is a tool project, doesn't need runtime identifier
+          # Using RID causes unnecessary complexity and can fail with prerelease packages
+          dotnet restore 2>&1 | Tee-Object -FilePath "$env:LOGS_FOLDER\restore.log"
           if ($LASTEXITCODE -ne 0) {
             Write-Output "Restore log:"
             Get-Content "$env:LOGS_FOLDER\restore.log" | Write-Output
@@ -248,7 +248,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@v5
       with:
-        name: content-build-logs-${{ github.run_id }}
+        name: content-build-logs-${{ inputs.monogame-platform }}-${{ github.run_id }}
         path: ${{ env.LOGS_FOLDER }}
         retention-days: 30
     
@@ -272,6 +272,6 @@ runs:
       if: ${{ inputs.upload-output == 'true' }}
       uses: actions/upload-artifact@v5
       with:
-        name: content-output-${{ github.run_id }}
+        name: content-output-${{ inputs.monogame-platform }}-${{ github.run_id }}
         path: ${{ env.LOGS_FOLDER }}/content-output
         retention-days: 30
