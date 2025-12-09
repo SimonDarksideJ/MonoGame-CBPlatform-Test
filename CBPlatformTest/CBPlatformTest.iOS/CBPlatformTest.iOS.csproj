@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.iOS" Version="3.8.5-develop.*" />
   </ItemGroup>
-  <Target Name="CollectContentBundles" AfterTargets="BuildContent;Build">
+  <Target Name="CollectContentBundles" BeforeTargets="Build" AfterTargets="BuildContent">
     <ItemGroup>
       <BundleResource Include="$(ProjectDir)$(OutputPath)Content\**\*" Condition="Exists('$(ProjectDir)$(OutputPath)Content')">
         <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>

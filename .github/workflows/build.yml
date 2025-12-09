@@ -11,7 +11,7 @@ jobs:
           - platform: iOS
             project: CBPlatformTest.iOS/CBPlatformTest.iOS.csproj
             output_dir: CBPlatformTest.iOS
-            content_dir: bin/Release/net9.0-ios
+            rid_path: bin/Release/net9.0-ios
             runtime: ios-arm64
             workload: ios
             os: macos-26
@@ -19,7 +19,7 @@ jobs:
           - platform: DesktopGL
             project: CBPlatformTest.DesktopGL/CBPlatformTest.DesktopGL.csproj
             output_dir: CBPlatformTest.DesktopGL
-            content_dir: bin/Release/net9.0/win-x64
+            rid_path: ""
             runtime: win-x64
             workload: ""
             os: windows-latest
@@ -27,7 +27,7 @@ jobs:
           - platform: Android
             project: CBPlatformTest.Android/CBPlatformTest.Android.csproj
             output_dir: CBPlatformTest.Android
-            content_dir: bin/Release/net9.0-android/android-arm64
+            rid_path: bin/Release/net9.0-android/android-arm64
             runtime: android-arm64
             workload: android
             os: windows-latest
@@ -51,7 +51,7 @@ jobs:
           content-project-path: "./CBPlatformTest/Content"
           assets-source-path: "./CBPlatformTest/Content/Assets"
           monogame-platform: ${{ matrix.platform }}
-          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.content_dir }}"
+          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release"
           runtime-identifier: ${{ matrix.runtime }}
 
       - name: Restore ${{ matrix.platform }}
@@ -67,6 +67,18 @@ jobs:
         if: ${{ matrix.platform != 'iOS' }}
         working-directory: ./CBPlatformTest
         run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
+
+      - name: Copy content to RID folder
+        if: ${{ matrix.rid_path != '' }}
+        shell: pwsh
+        run: |
+          $sourceContent = "CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
+          $destContent = "CBPlatformTest/${{ matrix.output_dir }}/${{ matrix.rid_path }}/Content"
+          if (Test-Path $sourceContent) {
+            New-Item -ItemType Directory -Path (Split-Path -Parent $destContent) -Force | Out-Null
+            Copy-Item -Path $sourceContent -Destination $destContent -Recurse -Force
+            Write-Output "Copied content to $destContent"
+          }
 
       - name: Upload ${{ matrix.platform }} artifact
         uses: actions/upload-artifact@v5
