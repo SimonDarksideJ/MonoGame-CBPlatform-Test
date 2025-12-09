@@ -5,6 +5,8 @@ on: workflow_dispatch
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_SUPPRESS_RUNTIME_IDENTIFIER_WARNING: "1"
     strategy:
       matrix:
         include:
@@ -29,9 +31,7 @@ jobs:
             workload: android
             os: windows-latest
             tfm: net9.0-android
-    steps:
-      - name: Suppress RID warning
-        run: echo "DOTNET_SUPPRESS_RUNTIME_IDENTIFIER_WARNING=1" >> $GITHUB_ENV      
+    steps:      
 
       - uses: actions/checkout@v5
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Publish ${{ matrix.platform }} release
         working-directory: ./CBPlatformTest
-        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false -p:WorkflowMode=true --self-contained --no-build
+        run: dotnet publish ${{ matrix.project }} -c Release -r ${{ matrix.runtime }} -p:PublishReadyToRun=false -p:TieredCompilation=false -p:WorkflowMode=true --self-contained
 
       - name: Archive ${{ matrix.platform }} publish
         shell: pwsh
