@@ -22,7 +22,7 @@ jobs:
           - platform: DesktopGL
             project: CBPlatformTest.DesktopGL/CBPlatformTest.DesktopGL.csproj
             output_dir: CBPlatformTest.DesktopGL
-            rid_path: ""
+            rid_path: bin/Release/net9.0/win-x64
             runtime: win-x64
             workload: ""
             os: windows-latest
