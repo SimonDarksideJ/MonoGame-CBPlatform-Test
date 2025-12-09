@@ -5,8 +5,6 @@ on: workflow_dispatch
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    env:
-      DOTNET_SUPPRESS_RUNTIME_IDENTIFIER_WARNING: "1"
     strategy:
       matrix:
         include:
@@ -50,7 +48,7 @@ jobs:
           content-project-path: "./CBPlatformTest/Content"
           assets-source-path: "./CBPlatformTest/Content/Assets"
           monogame-platform: ${{ matrix.platform }}
-          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release/Content"
+          output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release"
           runtime-identifier: ${{ matrix.runtime }}
 
       - name: Restore ${{ matrix.platform }}

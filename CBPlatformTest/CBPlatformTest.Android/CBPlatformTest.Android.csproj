@@ -15,11 +15,13 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.Android" Version="3.8.5-develop.*" />
   </ItemGroup>
-  <ItemGroup>
-    <AndroidAsset Include="$(OutputPath)Content\**\*">
-      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </AndroidAsset>
-  </ItemGroup>
+  <Target Name="CollectContentAssets" AfterTargets="BuildContent;Build">
+    <ItemGroup>
+      <AndroidAsset Include="$(ProjectDir)$(OutputPath)Content\**\*" Condition="Exists('$(ProjectDir)$(OutputPath)Content')">
+        <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      </AndroidAsset>
+    </ItemGroup>
+  </Target>
   <Target Name="BuildContent" BeforeTargets="Build" Condition="'$(WorkflowMode)' != 'true'">
     <PropertyGroup>
       <ContentOutput>$(ProjectDir)$(OutputPath)</ContentOutput>
