@@ -59,7 +59,7 @@ jobs:
 
       - name: Build ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
-        run: dotnet build -c Release ${{ matrix.project }} -r ${{ matrix.runtime }} -p:WorkflowMode=true
+        run: dotnet build -c Release ${{ matrix.project }}${{ matrix.platform == 'iOS' && '' || format(' -r {0}', matrix.runtime) }} -p:WorkflowMode=true
 
       - name: Archive ${{ matrix.platform }} build
         shell: pwsh
