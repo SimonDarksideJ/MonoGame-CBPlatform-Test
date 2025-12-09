@@ -9,7 +9,7 @@ A reusable composite GitHub Action for building MonoGame content using the MonoG
 - Support for local or external asset repositories
 - Automatic temp folder management
 - Comprehensive logging with artifact uploads
-- Optional content output archiving and upload
+- Optional content output upload
 - Custom argument support for advanced scenarios
 
 ## Inputs
@@ -22,9 +22,8 @@ A reusable composite GitHub Action for building MonoGame content using the MonoG
 | `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. If provided, the repository will be cloned to the `assets-source-path` location. Leave empty to use local assets. |
 | `monogame-platform` | Yes | - | MonoGame platform target. Valid values: `iOS`, `Android`, `DesktopGL`, `Windows`, `WindowsStoreApp`, `MacOSX`, `Linux`, `PlayStation4`, `XboxOne`, `Switch`, etc. |
 | `output-folder` | Yes | - | Output folder for processed content (relative to repo root). The compiled content will be placed here, ready to be included in your game build. |
-| `runtime-identifier` | **Yes** | - | Runtime identifier for the content builder (e.g., `win-x64`, `linux-x64`, `osx-arm64`, `ios-arm64`, `android-arm64`). Required to avoid assets file conflicts when building for specific platforms. Should match the target platform's runtime. |
 | `additional-args` | No | `''` | Additional arguments to pass to the content builder CLI (e.g., `--verbose` or `--rebuild`). Arguments should be space-separated. |
-| `upload-output` | No | `false` | Whether to archive and upload the content output as a GitHub artifact. Set to `true` to enable. Useful for debugging or distributing pre-built content. |
+| `upload-output` | No | `false` | Whether to upload the content output as a GitHub artifact. Set to `true` to enable. Useful for debugging or distributing pre-built content. |
 
 ## Outputs
 
@@ -64,7 +63,6 @@ jobs:
           assets-source-path: './Content/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
-          runtime-identifier: 'win-x64'
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -99,7 +97,6 @@ jobs:
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
-          runtime-identifier: 'win-x64'
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -142,7 +139,6 @@ jobs:
           assets-source-path: './ContentBuilder/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
-          runtime-identifier: 'win-x64'
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -186,7 +182,6 @@ jobs:
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
-          runtime-identifier: 'win-x64'
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -317,7 +312,6 @@ jobs:
           monogame-platform: ${{ matrix.platform }}
           output-folder: './Output/${{ matrix.platform }}'
           upload-output: 'true'
-          runtime-identifier: ${{ matrix.runtime }}
 ```
 
 ## Artifacts
@@ -334,8 +328,8 @@ The action automatically uploads two types of artifacts:
 - **When**: Always uploaded (even on failure) for debugging
 
 ### Content Output (Optional)
-- **Name**: `content-output-<run_id>`
-- **Contains**: `content-output.zip` - The compiled content files
+- **Name**: `content-output-<platform>-<run_id>`
+- **Contains**: The compiled content files for the specified platform
 - **Retention**: 30 days
 - **When**: Only when `upload-output: 'true'`
 
@@ -370,18 +364,6 @@ The action automatically uploads two types of artifacts:
 - Download the `content-build-logs-<run_id>` artifact
 - Review `content-pipeline.log` for detailed error messages
 - Check asset file formats and content processor settings
-
-### Assets File Conflicts (NETSDK1047)
-**Error**: `NETSDK1047: Assets file ... doesn't have a target for 'net9.0/...'`
-
-**Solution**: Specify the `runtime-identifier` parameter matching your target platform:
-- iOS: `ios-arm64`
-- Android: `android-arm64`
-- Windows: `win-x64`
-- Linux: `linux-x64`
-- macOS: `osx-arm64`
-
-This ensures the content builder is restored with the correct runtime target, preventing downstream build errors.
 
 ## Dependencies
 

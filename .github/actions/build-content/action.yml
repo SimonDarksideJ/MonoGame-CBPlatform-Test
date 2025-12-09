@@ -30,17 +30,13 @@ inputs:
     description: 'Output folder for processed content (relative to repo root)'
     required: true
   
-  runtime-identifier:
-    description: 'Runtime identifier for the content builder (e.g., win-x64, linux-x64, osx-arm64, ios-arm64, android-arm64). Required to avoid assets file conflicts when building for specific platforms.'
-    required: true    
-  
   additional-args:
     description: 'Additional arguments to pass to the content builder (e.g., "--verbose")'
     required: false
     default: ''
   
   upload-output:
-    description: 'Whether to archive and upload the content output as an artifact (true/false)'
+    description: 'Whether to upload the content output as an artifact (true/false)'
     required: false
     default: 'false'
 
@@ -97,6 +93,9 @@ runs:
           }
           # Clone to the content-project-path location
           git clone --depth 1 "https://github.com/${{ inputs.content-builder-repo }}.git" $ContentPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to clone content builder from ${{ inputs.content-builder-repo }}"
+          }
           Write-Output "Content builder cloned to: $ContentPath"
         } else {
           Write-Output "Using local content builder: $ContentPath"
@@ -121,6 +120,9 @@ runs:
           }
           # Clone to the assets-source-path location
           git clone --depth 1 "https://github.com/${{ inputs.assets-repo }}.git" $AssetsPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to clone assets from ${{ inputs.assets-repo }}"
+          }
           Write-Output "Assets cloned to: $AssetsPath"
         } else {
           Write-Output "Using local assets: $AssetsPath"
@@ -252,26 +254,10 @@ runs:
         path: ${{ env.LOGS_FOLDER }}
         retention-days: 30
     
-    - name: Archive content output
-      if: ${{ inputs.upload-output == 'true' }}
-      shell: pwsh
-      run: |
-        Write-Output "Archiving content output for upload..."
-        $ArchiveFolder = Join-Path $env:LOGS_FOLDER "content-output"
-        New-Item -ItemType Directory -Path $ArchiveFolder -Force | Out-Null
-        
-        if (Test-Path $env:OUTPUT_FOLDER) {
-          $ArchivePath = Join-Path $ArchiveFolder "content-output.zip"
-          Compress-Archive -Path "$env:OUTPUT_FOLDER\*" -DestinationPath $ArchivePath -Force
-          Write-Output "Content output archived to: $ArchivePath"
-        } else {
-          Write-Warning "Output folder not found: $env:OUTPUT_FOLDER"
-        }
-    
     - name: Upload content output artifact
       if: ${{ inputs.upload-output == 'true' }}
       uses: actions/upload-artifact@v5
       with:
         name: content-output-${{ inputs.monogame-platform }}-${{ github.run_id }}
-        path: ${{ env.LOGS_FOLDER }}/content-output
+        path: ${{ env.OUTPUT_FOLDER }}
         retention-days: 30

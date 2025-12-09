@@ -40,6 +40,7 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "9.0.x"
+          dotnet-quality: "latest"
 
       - name: Install workload
         if: ${{ matrix.workload != '' }}
@@ -52,7 +53,6 @@ jobs:
           assets-source-path: "./CBPlatformTest/Content/Assets"
           monogame-platform: ${{ matrix.platform }}
           output-folder: "./CBPlatformTest/${{ matrix.output_dir }}/bin/Release"
-          runtime-identifier: ${{ matrix.runtime }}
 
       - name: Restore ${{ matrix.platform }}
         working-directory: ./CBPlatformTest
