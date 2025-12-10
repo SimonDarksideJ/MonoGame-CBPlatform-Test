@@ -60,11 +60,11 @@ runs:
     - name: Setup build directories
       shell: pwsh
       run: |
-        $OutputFolder = Join-Path (Get-Location) "${{ inputs.output-folder }}"
+        $OutputFolder = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) "${{ inputs.output-folder }}"))
         # Use workspace root for temp and logs folders
         $WorkspaceRoot = Get-Location
-        $TempFolder = Join-Path $WorkspaceRoot "build-temp"
-        $LogsFolder = Join-Path $WorkspaceRoot "build-logs"
+        $TempFolder = [System.IO.Path]::GetFullPath((Join-Path $WorkspaceRoot "build-temp"))
+        $LogsFolder = [System.IO.Path]::GetFullPath((Join-Path $WorkspaceRoot "build-logs"))
         
         # Create directories
         New-Item -ItemType Directory -Path $OutputFolder -Force | Out-Null

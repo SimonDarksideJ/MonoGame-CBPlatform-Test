@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/build-content
         with:
           content-builder-repo: 'SimonDarksideJ/MonoGame-CBPlatform-Builder'
-          content-builder-path: ''
+          content-builder-path: 'Content'
           assets-repo: 'SimonDarksideJ/MonoGame-CBPlatform-Assets'
           assets-path: ''
           monogame-platform: 'DesktopGL'
