@@ -58,7 +58,7 @@ jobs:
           fi
           echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
           echo "rid_path=$RID_PATH" >> $GITHUB_OUTPUT
-          echo "content_output=./CBPlatformTest/$PROJECT_DIR/$RID_PATH" >> $GITHUB_OUTPUT
+          echo "content_output=./CBPlatformTest/$PROJECT_DIR/$RID_PATH/Content" >> $GITHUB_OUTPUT
 
       - name: Generate global.json
         run: |
@@ -77,10 +77,11 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: "./CBPlatformTest/Content"
-          assets-source-path: "./CBPlatformTest/Content/Assets"
+          content-builder-path: "./CBPlatformTest/Content"
+          assets-path: "./CBPlatformTest/Content/Assets"
           monogame-platform: ${{ matrix.platform }}
           output-folder: ${{ steps.paths.outputs.content_output }}
+          configuration: ${{ env.Configuration }}
 
       - name: Restore ${{ matrix.platform }}
         working-directory: ./CBPlatformTest

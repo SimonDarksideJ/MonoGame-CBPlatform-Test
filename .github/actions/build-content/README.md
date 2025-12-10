@@ -16,14 +16,18 @@ A reusable composite GitHub Action for building MonoGame content using the MonoG
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `content-builder-path` | No | `./CBPlatformTest/Content` | Path to the content builder. **For local**: relative path from repo root (e.g., `./Content` or `./Content/Builder`). **For remote**: subfolder within cloned repo (e.g., `""` for root, `"MyBuilder"`, or `"builders/desktop"`). |
-| `content-builder-repo` | No | `''` | Optional GitHub repository for the content builder in `owner/repo` format. When specified, the repo is cloned and `content-builder-path` is treated as a subfolder within it. When not specified, `content-builder-path` is treated as a local path. |
-| `assets-path` | No | `./Assets` | Path to the assets. **For local**: relative path from repo root (e.g., `./Assets` or `./Content/Assets`). **For remote**: subfolder within cloned repo (e.g., `""` for root, `"mobile"`, or `"projects/MyGame"`). Contains your game's raw assets (images, sounds, fonts, etc.). |
-| `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. When specified, the repo is cloned and `assets-path` is treated as a subfolder within it. When not specified, `assets-path` is treated as a local path. |
-| `monogame-platform` | Yes | - | MonoGame platform target. Valid values: `iOS`, `Android`, `DesktopGL`, `Windows`, `WindowsStoreApp`, `MacOSX`, `Linux`, `PlayStation4`, `XboxOne`, `Switch`, etc. |
+| `content-builder-path` | No | `./CBPlatformTest/Content` | Path to the content builder (local path or subfolder in a cloned builder repo). |
+| `content-builder-repo` | No | `''` | Optional GitHub repository for the content builder in `owner/repo` format. |
+| `assets-path` | No | `./Assets` | Path to the assets (local path or subfolder in a cloned assets repo). |
+| `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. |
+| `monogame-platform` | Yes | - | MonoGame platform target. Valid values: `iOS`, `Android`, `DesktopGL`, `Windows`, `MacOSX`, `Linux`, etc. (For full details, check the [MonoGame Platform Documentation](https://docs.monogame.net/articles/getting_started/platforms.html)|
 | `output-folder` | Yes | - | Output folder for processed content (relative to repo root). The compiled content will be placed here, ready to be included in your game build. |
 | `additional-args` | No | `''` | Additional arguments to pass to the content builder CLI (e.g., `--verbose` or `--rebuild`). Arguments should be space-separated. |
 | `upload-output` | No | `false` | Whether to upload the content output as a GitHub artifact. Set to `true` to enable. Useful for debugging or distributing pre-built content. |
+| `configuration` | No | `Release` | Build configuration for the content builder project (`Debug` or `Release`). |
+
+> [!NOTE]
+> For local usage, paths are relative to the repo root (e.g., `./CBPlatformTest/Content` or `./CBPlatformTest/Content/Assets`), and `./` prefixes are fine. For remote repos, set `content-builder-repo`/`assets-repo` and use the subfolder name within the clone (`""` for root, `MyBuilder`, `projects/MyGame`, etc.).
 
 ## Outputs
 
@@ -59,10 +63,11 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-builder-path: './Content'
-          assets-path: './Content/Assets'
+          content-builder-path: './CBPlatformTest/Content'
+          assets-path: './CBPlatformTest/Content/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -92,10 +97,11 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-builder-path: './Content'
+          content-builder-path: './CBPlatformTest/Content'
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -134,9 +140,10 @@ jobs:
         uses: ./.github/actions/build-content
         with:
           content-builder-repo: 'MyOrg/monogame-content-builder'
-          assets-path: './Content/Assets'
+          assets-path: './CBPlatformTest/Content/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -178,6 +185,7 @@ jobs:
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
@@ -210,29 +218,20 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       
-      - name: Set runtime identifier
-        id: set-runtime
-        shell: pwsh
-        run: |
-          $runtime = switch ("${{ matrix.platform }}") {
-            "iOS" { "ios-arm64" }
-            "Android" { "android-arm64" }
-            "DesktopGL" { "win-x64" }
-            default { "win-x64" }
-          }
-          "runtime=$runtime" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       
       - name: Process content for ${{ matrix.platform }}
         uses: ./.github/actions/build-content
         with:
-          content-builder-path: './Content'
-          assets-path: './Content/Assets'
+          content-builder-path: './CBPlatformTest/Content'
+          assets-path: './CBPlatformTest/Content/Assets'
           monogame-platform: ${{ matrix.platform }}
           output-folder: './ContentOutput/${{ matrix.platform }}'
           upload-output: 'true'
+          configuration: Release
       
       # The processed content is now available as:
-      # - Artifact: content-output-<run_id>
+      # - Artifact: content-output-<platform>-<run_id>
       # - Location: ./ContentOutput/<platform>/
   
   build-game:
@@ -247,7 +246,7 @@ jobs:
       - name: Download content for ${{ matrix.platform }}
         uses: actions/download-artifact@v4
         with:
-          name: content-output-${{ github.run_id }}
+          name: content-output-${{ matrix.platform }}-${{ github.run_id }}
           path: ./MyGame/bin/Release/Content
       
       - name: Build game
@@ -293,6 +292,7 @@ jobs:
           assets-path: 'projects/MyGame/common'
           monogame-platform: ${{ github.event.inputs.platform }}
           output-folder: './MyGame/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame/MyGame.csproj
@@ -360,6 +360,7 @@ jobs:
           assets-path: 'desktop-hd'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame.Desktop/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame.Desktop/MyGame.Desktop.csproj
@@ -385,6 +386,7 @@ jobs:
           assets-path: 'mobile-optimized'
           monogame-platform: 'iOS'
           output-folder: './MyGame.iOS/bin/Release/Content'
+          configuration: Release
       
       - name: Build game
         run: dotnet build -c Release MyGame.iOS/MyGame.iOS.csproj
@@ -400,11 +402,12 @@ Pass additional arguments to the MonoGame Content Builder:
 - name: Process content with custom options
   uses: ./.github/actions/build-content
   with:
-    content-builder-path: './Content'
-    assets-path: './Content/Assets'
+    content-builder-path: './CBPlatformTest/Content'
+    assets-path: './CBPlatformTest/Content/Assets'
     monogame-platform: 'DesktopGL'
     output-folder: './MyGame/bin/Release/Content'
     additional-args: '--verbose --rebuild --compress'
+    configuration: Release
 ```
 
 ### Multi-Platform Build
