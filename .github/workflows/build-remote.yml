@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Content (DesktopGL)
         id: build_content
-        uses: ./.github/actions/build-content
+        uses: MonoGame/monogame-actions/build-content@v1
         with:
           content-builder-repo: 'SimonDarksideJ/MonoGame-CBPlatform-Builder'
           content-builder-path: 'Content'

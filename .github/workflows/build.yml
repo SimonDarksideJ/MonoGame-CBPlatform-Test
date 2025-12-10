@@ -75,7 +75,7 @@ jobs:
         run: dotnet workload install ${{ matrix.workload }}
 
       - name: Process content
-        uses: ./.github/actions/build-content
+        uses: MonoGame/monogame-actions/build-content@v1
         with:
           content-builder-path: "./CBPlatformTest/Content"
           assets-path: "./CBPlatformTest/Content/Assets"
