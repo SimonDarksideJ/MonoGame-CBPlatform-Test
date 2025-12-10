@@ -36,12 +36,12 @@ jobs:
         id: build_content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './Content'
           content-builder-repo: 'SimonDarksideJ/MonoGame-CBPlatform-Builder'
-          assets-source-path: './Content/Assets'
+          content-builder-path: ''
           assets-repo: 'SimonDarksideJ/MonoGame-CBPlatform-Assets'
+          assets-path: ''
           monogame-platform: 'DesktopGL'
-          output-folder: './CBPlatformTest/CBPlatformTest.DesktopGL/bin/${{ env.Configuration }}/net9.0/win-x64/Content'
+          output-folder: 'CBPlatformTest/CBPlatformTest.DesktopGL/bin/${{ env.Configuration }}/net9.0/win-x64/Content'
           upload-output: 'true'
 
       - name: Restore DesktopGL

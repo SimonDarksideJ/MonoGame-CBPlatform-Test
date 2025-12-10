@@ -16,12 +16,10 @@ A reusable composite GitHub Action for building MonoGame content using the MonoG
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `content-project-path` | Yes | `./CBPlatformTest/Content` | Path to the content project folder (relative to repo root). This is where the MonoGame Content Builder console application resides. |
-| `content-builder-repo` | No | `''` | Optional GitHub repository for the content builder in `owner/repo` format. If provided, the repository will be cloned to the `content-project-path` location. Leave empty to use a local content builder. |
-| `content-builder-subfolder` | No | `''` | Optional subfolder within the cloned content builder repository (e.g., `"MyBuilder"` or `"builders/desktop"`). Useful when a repository contains multiple builder configurations for different platforms or scenarios. |
-| `assets-source-path` | Yes | `./Assets` | Path to the assets source folder (relative to repo root or content project). This contains your game's raw assets (images, sounds, fonts, etc.). |
-| `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. If provided, the repository will be cloned to the `assets-source-path` location. Leave empty to use local assets. |
-| `assets-subfolder` | No | `''` | Optional subfolder within the cloned assets repository (e.g., `"DesktopAssets"` or `"assets/shared"`). Useful when a repository contains assets organized by platform or project. |
+| `content-builder-path` | No | `./CBPlatformTest/Content` | Path to the content builder. **For local**: relative path from repo root (e.g., `./Content` or `./Content/Builder`). **For remote**: subfolder within cloned repo (e.g., `""` for root, `"MyBuilder"`, or `"builders/desktop"`). |
+| `content-builder-repo` | No | `''` | Optional GitHub repository for the content builder in `owner/repo` format. When specified, the repo is cloned and `content-builder-path` is treated as a subfolder within it. When not specified, `content-builder-path` is treated as a local path. |
+| `assets-path` | No | `./Assets` | Path to the assets. **For local**: relative path from repo root (e.g., `./Assets` or `./Content/Assets`). **For remote**: subfolder within cloned repo (e.g., `""` for root, `"mobile"`, or `"projects/MyGame"`). Contains your game's raw assets (images, sounds, fonts, etc.). |
+| `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. When specified, the repo is cloned and `assets-path` is treated as a subfolder within it. When not specified, `assets-path` is treated as a local path. |
 | `monogame-platform` | Yes | - | MonoGame platform target. Valid values: `iOS`, `Android`, `DesktopGL`, `Windows`, `WindowsStoreApp`, `MacOSX`, `Linux`, `PlayStation4`, `XboxOne`, `Switch`, etc. |
 | `output-folder` | Yes | - | Output folder for processed content (relative to repo root). The compiled content will be placed here, ready to be included in your game build. |
 | `additional-args` | No | `''` | Additional arguments to pass to the content builder CLI (e.g., `--verbose` or `--rebuild`). Arguments should be space-separated. |
@@ -61,8 +59,8 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './Content'
-          assets-source-path: './Content/Assets'
+          content-builder-path: './Content'
+          assets-path: './Content/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
       
@@ -94,8 +92,7 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './Content'
-          assets-source-path: './SharedAssets'
+          content-builder-path: './Content'
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
@@ -104,9 +101,9 @@ jobs:
         run: dotnet build -c Release MyGame/MyGame.csproj -r win-x64
 ```
 
-### Example 3: Content Builder and Assets in One Repository, Game in Another
+### Example 3: Content Builder from External Repository, Local Assets
 
-The content builder and assets are maintained in a shared tools repository, while the game code is in its own repository.
+The content builder is maintained in a shared tools repository, while assets are stored locally with the game.
 
 **In the game repository:**
 
@@ -136,9 +133,8 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './ContentBuilder'
-          content-builder-repo: 'MyOrg/monogame-content-tools'
-          assets-source-path: './ContentBuilder/Assets'
+          content-builder-repo: 'MyOrg/monogame-content-builder'
+          assets-path: './Content/Assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
       
@@ -178,9 +174,7 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './ContentPipeline'
           content-builder-repo: 'MyOrg/monogame-content-builder'
-          assets-source-path: './GameAssets'
           assets-repo: 'MyOrg/game-assets'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame/bin/Release/Content'
@@ -231,8 +225,8 @@ jobs:
       - name: Process content for ${{ matrix.platform }}
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './Content'
-          assets-source-path: './Content/Assets'
+          content-builder-path: './Content'
+          assets-path: './Content/Assets'
           monogame-platform: ${{ matrix.platform }}
           output-folder: './ContentOutput/${{ matrix.platform }}'
           upload-output: 'true'
@@ -293,12 +287,10 @@ jobs:
       - name: Process content with subfolders
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './ContentBuilder'
           content-builder-repo: 'MyOrg/monogame-content-pipelines'
-          content-builder-subfolder: 'builders/${{ github.event.inputs.platform }}'
-          assets-source-path: './GameAssets'
+          content-builder-path: 'builders/${{ github.event.inputs.platform }}'
           assets-repo: 'MyOrg/game-assets-library'
-          assets-subfolder: 'projects/MyGame/common'
+          assets-path: 'projects/MyGame/common'
           monogame-platform: ${{ github.event.inputs.platform }}
           output-folder: './MyGame/bin/Release/Content'
       
@@ -361,12 +353,11 @@ jobs:
       - name: Build desktop content
         uses: ./.github/actions/build-content
         with:
-          # Use local content builder
-          content-project-path: './Content/Builder'
+          # Use local content builder in Builder subfolder
+          content-builder-path: './Content/Builder'
           # Pull shared assets from external repo, use desktop-specific subfolder
-          assets-source-path: './SharedAssets'
           assets-repo: 'MyOrg/shared-game-assets'
-          assets-subfolder: 'desktop-hd'
+          assets-path: 'desktop-hd'
           monogame-platform: 'DesktopGL'
           output-folder: './MyGame.Desktop/bin/Release/Content'
       
@@ -386,14 +377,12 @@ jobs:
       - name: Build iOS content
         uses: ./.github/actions/build-content
         with:
-          # Use external mobile-optimized builder
-          content-project-path: './MobileBuilder'
+          # Use external mobile-optimized builder in ios subfolder
           content-builder-repo: 'MyOrg/mobile-content-builder'
-          content-builder-subfolder: 'ios'
+          content-builder-path: 'ios'
           # Use external assets, mobile-optimized subfolder
-          assets-source-path: './MobileAssets'
           assets-repo: 'MyOrg/shared-game-assets'
-          assets-subfolder: 'mobile-optimized'
+          assets-path: 'mobile-optimized'
           monogame-platform: 'iOS'
           output-folder: './MyGame.iOS/bin/Release/Content'
       
@@ -411,8 +400,8 @@ Pass additional arguments to the MonoGame Content Builder:
 - name: Process content with custom options
   uses: ./.github/actions/build-content
   with:
-    content-project-path: './Content'
-    assets-source-path: './Content/Assets'
+    content-builder-path: './Content'
+    assets-path: './Content/Assets'
     monogame-platform: 'DesktopGL'
     output-folder: './MyGame/bin/Release/Content'
     additional-args: '--verbose --rebuild --compress'
@@ -449,8 +438,8 @@ jobs:
       - name: Process content
         uses: ./.github/actions/build-content
         with:
-          content-project-path: './Content'
-          assets-source-path: './Content/Assets'
+          content-builder-path: './Content'
+          assets-path: './Content/Assets'
           monogame-platform: ${{ matrix.platform }}
           output-folder: './Output/${{ matrix.platform }}'
           upload-output: 'true'
@@ -478,21 +467,33 @@ The action automatically uploads two types of artifacts:
 ## Troubleshooting
 
 ### Content Builder Not Found
-**Error**: `Content project path not found` or `No .csproj file found`
+**Error**: `Content builder path not found` or `No .csproj file found`
 
 **Solution**: 
-- Ensure `content-project-path` points to the correct directory
-- If using `content-builder-repo`, verify the repository contains a `.csproj` file
-- If using `content-builder-subfolder`, ensure the subfolder exists and contains a `.csproj` file
+- When using local builder: Ensure `content-builder-path` points to the correct directory (e.g., `'./Content'` or `'./Content/Builder'`)
+- When using remote builder: Verify the repository exists and `content-builder-path` points to the correct subfolder (or use `""` for root)
 - The action automatically searches recursively for `.csproj` files; if multiple are found, it uses the first one
 
 ### Assets Not Found
-**Error**: `Assets source path not found` or `Subfolder not found in cloned repository`
+**Error**: `Assets path not found`
 
 **Solution**: 
-- Verify `assets-source-path` points to the directory containing your raw assets
-- If using `assets-subfolder`, ensure the subfolder exists within the cloned repository
+- When using local assets: Verify `assets-path` points to the directory containing your raw assets (e.g., `'./Assets'`)
+- When using remote assets: Verify the repository exists and `assets-path` points to the correct subfolder (or use `""` for root)
 - Check for typos in folder paths (paths are case-sensitive on Linux/macOS runners)
+
+### Understanding Path Parameters
+The path parameters have dual meaning depending on whether you're using local or remote sources:
+
+**For local content builder:**
+- Set `content-builder-path` to your local path from repo root (e.g., `'./Content'` or `'./Content/Builder'`)
+- Do NOT set `content-builder-repo`
+
+**For remote content builder:**
+- Set `content-builder-repo` to the GitHub repository (e.g., `'MyOrg/content-builder'`)
+- Set `content-builder-path` to the subfolder within the cloned repo (e.g., `'builders/desktop'` or `""` for root)
+
+The same pattern applies to assets with `assets-path` and `assets-repo`.
 
 ### Clone Failures
 **Error**: Git clone fails for `content-builder-repo` or `assets-repo`
