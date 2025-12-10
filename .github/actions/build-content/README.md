@@ -18,8 +18,10 @@ A reusable composite GitHub Action for building MonoGame content using the MonoG
 |-------|----------|---------|-------------|
 | `content-project-path` | Yes | `./CBPlatformTest/Content` | Path to the content project folder (relative to repo root). This is where the MonoGame Content Builder console application resides. |
 | `content-builder-repo` | No | `''` | Optional GitHub repository for the content builder in `owner/repo` format. If provided, the repository will be cloned to the `content-project-path` location. Leave empty to use a local content builder. |
+| `content-builder-subfolder` | No | `''` | Optional subfolder within the cloned content builder repository (e.g., `"MyBuilder"` or `"builders/desktop"`). Useful when a repository contains multiple builder configurations for different platforms or scenarios. |
 | `assets-source-path` | Yes | `./Assets` | Path to the assets source folder (relative to repo root or content project). This contains your game's raw assets (images, sounds, fonts, etc.). |
 | `assets-repo` | No | `''` | Optional GitHub repository for assets in `owner/repo` format. If provided, the repository will be cloned to the `assets-source-path` location. Leave empty to use local assets. |
+| `assets-subfolder` | No | `''` | Optional subfolder within the cloned assets repository (e.g., `"DesktopAssets"` or `"assets/shared"`). Useful when a repository contains assets organized by platform or project. |
 | `monogame-platform` | Yes | - | MonoGame platform target. Valid values: `iOS`, `Android`, `DesktopGL`, `Windows`, `WindowsStoreApp`, `MacOSX`, `Linux`, `PlayStation4`, `XboxOne`, `Switch`, etc. |
 | `output-folder` | Yes | - | Output folder for processed content (relative to repo root). The compiled content will be placed here, ready to be included in your game build. |
 | `additional-args` | No | `''` | Additional arguments to pass to the content builder CLI (e.g., `--verbose` or `--rebuild`). Arguments should be space-separated. |
@@ -234,7 +236,6 @@ jobs:
           monogame-platform: ${{ matrix.platform }}
           output-folder: './ContentOutput/${{ matrix.platform }}'
           upload-output: 'true'
-          runtime-identifier: ${{ steps.set-runtime.outputs.runtime }}
       
       # The processed content is now available as:
       # - Artifact: content-output-<run_id>
@@ -257,6 +258,147 @@ jobs:
       
       - name: Build game
         run: dotnet build -c Release MyGame.${{ matrix.platform }}/MyGame.${{ matrix.platform }}.csproj
+```
+
+### Example 6: Using Subfolders for Multi-Configuration Repositories
+
+When your repositories contain multiple builder configurations or asset sets, use the subfolder parameters to target specific directories. This is ideal for organizations managing multiple projects or platform-specific configurations in a single repository.
+
+```yaml
+name: Build with Repository Subfolders
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform'
+        required: true
+        type: choice
+        options:
+          - DesktopGL
+          - iOS
+          - Android
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Process content with subfolders
+        uses: ./.github/actions/build-content
+        with:
+          content-project-path: './ContentBuilder'
+          content-builder-repo: 'MyOrg/monogame-content-pipelines'
+          content-builder-subfolder: 'builders/${{ github.event.inputs.platform }}'
+          assets-source-path: './GameAssets'
+          assets-repo: 'MyOrg/game-assets-library'
+          assets-subfolder: 'projects/MyGame/common'
+          monogame-platform: ${{ github.event.inputs.platform }}
+          output-folder: './MyGame/bin/Release/Content'
+      
+      - name: Build game
+        run: dotnet build -c Release MyGame/MyGame.csproj
+```
+
+**Example repository structures:**
+
+Content builder repository (`MyOrg/monogame-content-pipelines`):
+```
+builders/
+  DesktopGL/
+    Builder.csproj
+    Program.cs
+  iOS/
+    Builder.csproj
+    Program.cs
+  Android/
+    Builder.csproj
+    Program.cs
+```
+
+Assets repository (`MyOrg/game-assets-library`):
+```
+projects/
+  MyGame/
+    common/
+      fonts/
+      sounds/
+    mobile/
+      textures/
+    desktop/
+      textures/
+  AnotherGame/
+    ...
+```
+
+### Example 7: Mixed Configurations with Subfolders
+
+Combine local and external repositories with subfolder targeting for maximum flexibility.
+
+```yaml
+name: Complex Build Configuration
+
+on:
+  workflow_dispatch
+
+jobs:
+  build-desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Build desktop content
+        uses: ./.github/actions/build-content
+        with:
+          # Use local content builder
+          content-project-path: './Content/Builder'
+          # Pull shared assets from external repo, use desktop-specific subfolder
+          assets-source-path: './SharedAssets'
+          assets-repo: 'MyOrg/shared-game-assets'
+          assets-subfolder: 'desktop-hd'
+          monogame-platform: 'DesktopGL'
+          output-folder: './MyGame.Desktop/bin/Release/Content'
+      
+      - name: Build game
+        run: dotnet build -c Release MyGame.Desktop/MyGame.Desktop.csproj
+
+  build-mobile:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Build iOS content
+        uses: ./.github/actions/build-content
+        with:
+          # Use external mobile-optimized builder
+          content-project-path: './MobileBuilder'
+          content-builder-repo: 'MyOrg/mobile-content-builder'
+          content-builder-subfolder: 'ios'
+          # Use external assets, mobile-optimized subfolder
+          assets-source-path: './MobileAssets'
+          assets-repo: 'MyOrg/shared-game-assets'
+          assets-subfolder: 'mobile-optimized'
+          monogame-platform: 'iOS'
+          output-folder: './MyGame.iOS/bin/Release/Content'
+      
+      - name: Build game
+        run: dotnet build -c Release MyGame.iOS/MyGame.iOS.csproj
 ```
 
 ## Advanced Usage
@@ -336,14 +478,21 @@ The action automatically uploads two types of artifacts:
 ## Troubleshooting
 
 ### Content Builder Not Found
-**Error**: `Content project path not found`
+**Error**: `Content project path not found` or `No .csproj file found`
 
-**Solution**: Ensure `content-project-path` points to the correct directory containing the `.csproj` file.
+**Solution**: 
+- Ensure `content-project-path` points to the correct directory
+- If using `content-builder-repo`, verify the repository contains a `.csproj` file
+- If using `content-builder-subfolder`, ensure the subfolder exists and contains a `.csproj` file
+- The action automatically searches recursively for `.csproj` files; if multiple are found, it uses the first one
 
 ### Assets Not Found
-**Error**: `Assets source path not found`
+**Error**: `Assets source path not found` or `Subfolder not found in cloned repository`
 
-**Solution**: Verify `assets-source-path` points to the directory containing your raw assets.
+**Solution**: 
+- Verify `assets-source-path` points to the directory containing your raw assets
+- If using `assets-subfolder`, ensure the subfolder exists within the cloned repository
+- Check for typos in folder paths (paths are case-sensitive on Linux/macOS runners)
 
 ### Clone Failures
 **Error**: Git clone fails for `content-builder-repo` or `assets-repo`
