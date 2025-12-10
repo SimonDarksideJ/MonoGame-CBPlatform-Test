@@ -161,6 +161,8 @@ runs:
         try {
           dotnet build -c Release --no-restore 2>&1 | Tee-Object -FilePath "$env:LOGS_FOLDER\build.log"
           if ($LASTEXITCODE -ne 0) {
+            Write-Output "Build log:"
+            Get-Content "$env:LOGS_FOLDER\build.log" | Write-Output
             throw "Build failed with exit code: $LASTEXITCODE"
           }
         } finally {
@@ -186,7 +188,7 @@ runs:
         $Command = @(
           "dotnet",
           "run",
-          "-c", "Release",
+          "--no-build",
           "--project", "$env:CONTENT_PROJECT_PATH",
           "--no-restore",
           "--",
@@ -199,7 +201,8 @@ runs:
         
         # Add additional arguments if provided
         if ("${{ inputs.additional-args }}" -ne "") {
-          $AdditionalArgs = "${{ inputs.additional-args }}".Split(' ')
+          # Parse additional-args as an array, respecting quotes (e.g., --message "Build Complete")
+          $AdditionalArgs = Invoke-Expression "@('${{ inputs.additional-args }}')"
           $Command += $AdditionalArgs
         }
         
